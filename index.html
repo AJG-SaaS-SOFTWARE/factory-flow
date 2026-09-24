@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="theme-color" content="#10151c" />
+  <title>Factory Flow — Prototype</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app" aria-live="polite">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">PROTOTYPE</div>
+        <h1>Factory Flow</h1>
+      </div>
+      <div class="header-actions">
+        <button id="soundBtn" class="icon-btn" aria-label="Activer ou couper le son">🔊</button>
+        <button id="resetBtn" class="icon-btn" aria-label="Réinitialiser la partie">↻</button>
+      </div>
+    </header>
+    <section class="status-card">
+      <div><span class="status-label">NIVEAU</span><strong id="levelLabel">1 / 10</strong></div>
+      <div><span class="status-label">TRAITÉ</span><strong id="progressLabel">0 / 0</strong></div>
+      <div><span class="status-label">TOUR</span><strong id="turnLabel">0</strong></div>
+    </section>
+    <section class="objective" id="objectiveCard">
+      <div><span class="status-label">OBJECTIF</span><strong id="objectiveText">Apprendre le flux.</strong></div>
+      <button id="hintBtn" class="text-btn">Indice</button>
+    </section>
+    <section class="factory" aria-label="Zone de jeu">
+      <div class="lane-head"><span>ENTRÉE</span><span id="queueCount">0 pièces</span></div>
+      <div class="queue-wrap"><div class="queue" id="queue"></div></div>
+      <div class="junction"><div class="belt-line"></div><div class="junction-core">⇣</div></div>
+      <div class="machines" id="machines"></div>
+      <div class="buffer-panel" id="bufferPanel">
+        <div class="panel-title"><span>BUFFER</span><span id="bufferCount">0 / 0</span></div>
+        <div class="buffer-slots" id="bufferSlots"></div>
+        <button id="bufferBtn" class="buffer-action">Mettre la pièce en attente</button>
+      </div>
+    </section>
+    <section class="message" id="messageBox">
+      <strong id="messageTitle">À toi de jouer</strong>
+      <span id="messageText">Envoie la première pièce vers la machine de la même couleur.</span>
+    </section>
+    <section class="tutorial" id="tutorialCard">
+      <span class="tutorial-step" id="tutorialStep">1</span>
+      <p id="tutorialText">Touchez une machine pour y envoyer la première pièce.</p>
+    </section>
+    <footer>
+      <button id="prevBtn" class="nav-btn secondary" disabled>← Niveau précédent</button>
+      <button id="nextBtn" class="nav-btn" disabled>Niveau suivant →</button>
+    </footer>
+  </main>
+  <div class="modal hidden" id="resultModal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="result-icon" id="resultIcon">✅</div>
+      <h2 id="resultTitle">Ligne optimisée !</h2>
+      <p id="resultText">Toutes les pièces ont été traitées.</p>
+      <div class="result-stats">
+        <div><span>Tours</span><strong id="resultTurns">0</strong></div>
+        <div><span>Buffers</span><strong id="resultBuffers">0</strong></div>
+      </div>
+      <button id="modalPrimary" class="nav-btn">Continuer</button>
+      <button id="modalSecondary" class="nav-btn secondary">Rejouer</button>
+    </div>
+  </div>
+  <aside class="qa-panel hidden" id="qaPanel">
+    <div class="qa-head"><strong>QA MODE</strong><button id="qaClose">×</button></div>
+    <div class="qa-levels" id="qaLevels"></div>
+    <pre id="qaStats"></pre>
+    <button class="nav-btn secondary" id="qaRefresh">Rafraîchir stats</button>
+    <button class="nav-btn secondary" id="qaCopy">Copier JSON</button>
+  </aside>
+  <script src="levels.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
