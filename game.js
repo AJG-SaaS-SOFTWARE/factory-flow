@@ -22,10 +22,31 @@
   const analytics = loadAnalytics();
 
   function loadAnalytics(){
-    try { return JSON.parse(localStorage.getItem(statsKey)) || {sessions:0,levelStarts:{},wins:{},fails:{},bufferUses:0}; }
-    catch { return {sessions:0,levelStarts:{},wins:{},fails:{},bufferUses:0}; }
+    try { return JSON.parse(localStorage.getItem(statsKey)) || {sessions:0,levelStarts:{},wins:{},fails:{},bufferUses:0,wrongMachines:0,hints:0,levelRuns:{}}; }
+    catch { return {sessions:0,levelStarts:{},wins:{},fails:{},bufferUses:0,wrongMachines:0,hints:0,levelRuns:{}}; }
   }
   function saveAnalytics(){ localStorage.setItem(statsKey, JSON.stringify(analytics)); }
+
+  function elapsedSeconds(){
+    return Math.max(0, Math.round((Date.now() - (state?.startedAt || Date.now())) / 1000));
+  }
+
+  function recordRun(result){
+    const key=String(state.levelIndex+1);
+    analytics.levelRuns ||= {};
+    analytics.levelRuns[key] ||= [];
+    analytics.levelRuns[key].push({
+      result,
+      ts:Date.now(),
+      durationSec:elapsedSeconds(),
+      turns:state.turns,
+      bufferUses:state.bufferUses,
+      wrongMachines:state.wrongMachines,
+      hints:state.hints
+    });
+    analytics.levelRuns[key]=analytics.levelRuns[key].slice(-20);
+    saveAnalytics();
+  }
   analytics.sessions = (analytics.sessions || 0) + 1; saveAnalytics();
 
   function event(type, payload={}){
@@ -56,7 +77,7 @@
       bufferCap:l.buffer,
       selectedBufferIndex:null,
       machines:Object.fromEntries(Object.entries(l.machines).map(([c,m])=>[c,{color:c,processing:m.processing||0,busy:0,maintenance:m.maintenance||0,done:0}])),
-      total:l.queue.length, processed:0, turns:0, bufferUses:0, won:false, failed:false
+      total:l.queue.length, processed:0, turns:0, bufferUses:0, wrongMachines:0, hints:0, startedAt:Date.now(), won:false, failed:false
     };
     analytics.levelStarts[index+1]=(analytics.levelStarts[index+1]||0)+1; saveAnalytics();
     event('level_start',{reason,title:l.title});
@@ -92,7 +113,7 @@
     }
     if(p.color!==color){
       setMessage('Mauvais poste', `La pièce ${COLORS[p.color].name.toLowerCase()} doit aller sur la machine ${COLORS[p.color].name.toLowerCase()}.`, 'bad');
-      shakeMachine(color); tone(140,.08,'square',.025); vibrate(35); event('wrong_machine',{piece:p.color,target:color});
+      shakeMachine(color); tone(140,.08,'square',.025); vibrate(35); state.wrongMachines++; analytics.wrongMachines=(analytics.wrongMachines||0)+1; saveAnalytics(); event('wrong_machine',{piece:p.color,target:color});
       return;
     }
 
@@ -158,7 +179,7 @@
 
   function win(){
     state.won=true; analytics.wins[state.levelIndex+1]=(analytics.wins[state.levelIndex+1]||0)+1; saveAnalytics();
-    event('level_win',{turns:state.turns,bufferUses:state.bufferUses});
+    recordRun('win'); event('level_win',{turns:state.turns,bufferUses:state.bufferUses,durationSec:elapsedSeconds()});
     tone(620,.09,'sine',.04); setTimeout(()=>tone(780,.1,'sine',.04),90); setTimeout(()=>tone(980,.13,'sine',.04),180); vibrate([25,40,25]);
     els.resultIcon.textContent='✅'; els.resultTitle.textContent='Ligne optimisée !'; els.resultText.textContent='Toutes les pièces ont été traitées sans bloquer l’usine.';
     els.resultTurns.textContent=state.turns; els.resultBuffers.textContent=state.bufferUses;
@@ -168,7 +189,7 @@
 
   function fail(title,text){
     if(state.failed||state.won) return;
-    state.failed=true; analytics.fails[state.levelIndex+1]=(analytics.fails[state.levelIndex+1]||0)+1; saveAnalytics(); event('level_fail',{reason:title,turns:state.turns});
+    state.failed=true; analytics.fails[state.levelIndex+1]=(analytics.fails[state.levelIndex+1]||0)+1; recordRun('fail'); saveAnalytics(); event('level_fail',{reason:title,turns:state.turns,durationSec:elapsedSeconds()});
     tone(110,.18,'sawtooth',.035); vibrate([60,50,80]);
     els.resultIcon.textContent='🚨'; els.resultTitle.textContent=title; els.resultText.textContent=text;
     els.resultTurns.textContent=state.turns; els.resultBuffers.textContent=state.bufferUses; els.modalPrimary.textContent='Réessayer'; els.modalSecondary.textContent='Voir l’indice';
@@ -221,7 +242,7 @@
   els.prevBtn.addEventListener('click',()=>{ if(state.levelIndex>0)initLevel(state.levelIndex-1,'previous'); });
   els.nextBtn.addEventListener('click',()=>{ if(state.won&&state.levelIndex<LEVELS.length-1)initLevel(state.levelIndex+1,'next'); });
   els.resetBtn.addEventListener('click',()=>initLevel(state.levelIndex,'reset'));
-  els.hintBtn.addEventListener('click',()=>{setMessage('Indice',LEVELS[state.levelIndex].hint,''); event('hint_open');});
+  els.hintBtn.addEventListener('click',()=>{state.hints++; analytics.hints=(analytics.hints||0)+1; saveAnalytics(); setMessage('Indice',LEVELS[state.levelIndex].hint,''); event('hint_open',{count:state.hints});});
   els.soundBtn.addEventListener('click',()=>{soundOn=!soundOn;els.soundBtn.textContent=soundOn?'🔊':'🔇';event('sound_toggle',{on:soundOn});});
   els.modalPrimary.addEventListener('click',()=>{
     els.resultModal.classList.add('hidden');
