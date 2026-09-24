@@ -29,6 +29,20 @@
       <div><span class="status-label">OBJECTIF</span><strong id="objectiveText">Apprendre le flux.</strong></div>
       <button id="hintBtn" class="text-btn">Indice</button>
     </section>
+    <section class="meta-card" id="metaCard">
+      <div class="meta-visual" id="metaIcon">🏚️</div>
+      <div class="meta-copy">
+        <div class="meta-row">
+          <div><span class="status-label">TON USINE</span><strong id="metaStage">Atelier abandonné</strong></div>
+          <strong class="gear-count" id="gearCount">0 ⚙</strong>
+        </div>
+        <div class="meta-progress"><i id="metaProgress"></i></div>
+        <div class="meta-bottom">
+          <span id="metaNext">Remettre le convoyeur en service</span>
+          <button id="upgradeBtn" class="upgrade-btn">Améliorer · 4 ⚙</button>
+        </div>
+      </div>
+    </section>
     <section class="factory" aria-label="Zone de jeu">
       <div class="lane-head"><span>ENTRÉE</span><span id="queueCount">0 pièces</span></div>
       <div class="queue-wrap"><div class="queue" id="queue"></div></div>
@@ -62,6 +76,7 @@
         <div><span>Tours</span><strong id="resultTurns">0</strong></div>
         <div><span>Buffers</span><strong id="resultBuffers">0</strong></div>
       </div>
+      <div class="reward-line hidden" id="rewardLine">+3 ⚙ Engrenages</div>
       <button id="modalPrimary" class="nav-btn">Continuer</button>
       <button id="modalSecondary" class="nav-btn secondary">Rejouer</button>
     </div>
