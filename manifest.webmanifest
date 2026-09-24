@@ -1,0 +1,9 @@
+{
+  "name": "Factory Flow Prototype",
+  "short_name": "Factory Flow",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0b0f14",
+  "theme_color": "#10151c",
+  "description": "Prototype mobile-first d'un puzzle de gestion de flux industriel."
+}
