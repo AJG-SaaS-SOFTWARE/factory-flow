@@ -11,7 +11,7 @@
   const LEVELS = window.FACTORY_FLOW_LEVELS;
 
   const els = Object.fromEntries([
-    'levelLabel','progressLabel','turnLabel','objectiveText','queueCount','queue','machines','bufferCount','bufferSlots','bufferBtn','messageBox','messageTitle','messageText','tutorialCard','tutorialStep','tutorialText','prevBtn','nextBtn','resultModal','resultIcon','resultTitle','resultText','resultTurns','resultBuffers','modalPrimary','modalSecondary','resetBtn','hintBtn','soundBtn','objectiveCard','bufferPanel'
+    'levelLabel','progressLabel','turnLabel','objectiveText','queueCount','queue','machines','bufferCount','bufferSlots','bufferBtn','messageBox','messageTitle','messageText','tutorialCard','tutorialStep','tutorialText','prevBtn','nextBtn','resultModal','resultIcon','resultTitle','resultText','resultTurns','resultBuffers','modalPrimary','modalSecondary','resetBtn','hintBtn','soundBtn','objectiveCard','bufferPanel','metaCard','metaIcon','metaStage','gearCount','metaProgress','metaNext','upgradeBtn','rewardLine'
   ].map(id => [id, document.getElementById(id)]));
 
   let state = null;
@@ -19,13 +19,75 @@
   let audioCtx = null;
 
   const statsKey = 'factoryFlowPrototypeStatsV1';
+  const metaKey = 'factoryFlowMetaV1';
+  const META_STAGES = [
+    {name:'Atelier abandonné',icon:'🏚️',cost:4,next:'Remettre le convoyeur en service'},
+    {name:'Petite ligne',icon:'🏭',cost:7,next:'Installer un robot de manutention'},
+    {name:'Usine automatisée',icon:'🤖',cost:10,next:'Ouvrir le nouvel entrepôt'},
+    {name:'Centre industriel',icon:'📦',cost:14,next:'Déployer le contrôle qualité'},
+    {name:'Smart Factory',icon:'⚡',cost:18,next:'Construire la ligne futuriste'},
+    {name:'Future Factory',icon:'🚀',cost:null,next:'Usine au niveau maximum'}
+  ];
   const analytics = loadAnalytics();
+  const meta = loadMeta();
 
   function loadAnalytics(){
     try { return JSON.parse(localStorage.getItem(statsKey)) || {sessions:0,levelStarts:{},wins:{},fails:{},bufferUses:0,wrongMachines:0,hints:0,levelRuns:{}}; }
     catch { return {sessions:0,levelStarts:{},wins:{},fails:{},bufferUses:0,wrongMachines:0,hints:0,levelRuns:{}}; }
   }
   function saveAnalytics(){ localStorage.setItem(statsKey, JSON.stringify(analytics)); }
+  function loadMeta(){
+    try { return JSON.parse(localStorage.getItem(metaKey)) || {gears:0,stage:0,firstClears:{}}; }
+    catch { return {gears:0,stage:0,firstClears:{}}; }
+  }
+  function saveMeta(){ localStorage.setItem(metaKey, JSON.stringify(meta)); }
+
+  function renderMeta(){
+    const stage=META_STAGES[meta.stage];
+    els.metaIcon.textContent=stage.icon;
+    els.metaStage.textContent=stage.name;
+    els.gearCount.textContent=`${meta.gears} ⚙`;
+    els.metaNext.textContent=stage.next;
+    if(stage.cost===null){
+      els.metaProgress.style.width='100%';
+      els.upgradeBtn.textContent='Usine au maximum';
+      els.upgradeBtn.disabled=true;
+    } else {
+      const pct=Math.min(100,Math.round(meta.gears/stage.cost*100));
+      els.metaProgress.style.width=`${pct}%`;
+      els.upgradeBtn.textContent=`Améliorer · ${stage.cost} ⚙`;
+      els.upgradeBtn.disabled=meta.gears<stage.cost;
+    }
+  }
+
+  function awardWinReward(){
+    const key=String(state.levelIndex+1);
+    const first=!meta.firstClears[key];
+    const reward=first?3:1;
+    meta.gears+=reward;
+    meta.firstClears[key]=true;
+    saveMeta();
+    state.rewardGears=reward;
+    renderMeta();
+    event('meta_reward',{reward,firstClear:first,gears:meta.gears,stage:meta.stage});
+    return reward;
+  }
+
+  function upgradeFactory(){
+    const stage=META_STAGES[meta.stage];
+    if(stage.cost===null) return;
+    if(meta.gears<stage.cost){
+      setMessage('Encore quelques engrenages',`Il te manque ${stage.cost-meta.gears} ⚙ pour améliorer l'usine.`,'');
+      return;
+    }
+    meta.gears-=stage.cost;
+    meta.stage=Math.min(meta.stage+1,META_STAGES.length-1);
+    saveMeta();
+    renderMeta();
+    tone(560,.06,'sine',.035); setTimeout(()=>tone(760,.08,'sine',.035),70); vibrate([20,30,20]);
+    setMessage('Usine améliorée !',`Nouveau stade : ${META_STAGES[meta.stage].name}.`,'good');
+    event('meta_upgrade',{stage:meta.stage,stageName:META_STAGES[meta.stage].name,gears:meta.gears});
+  }
 
   function elapsedSeconds(){
     return Math.max(0, Math.round((Date.now() - (state?.startedAt || Date.now())) / 1000));
@@ -179,10 +241,12 @@
 
   function win(){
     state.won=true; analytics.wins[state.levelIndex+1]=(analytics.wins[state.levelIndex+1]||0)+1; saveAnalytics();
+    const reward=awardWinReward();
     recordRun('win'); event('level_win',{turns:state.turns,bufferUses:state.bufferUses,durationSec:elapsedSeconds()});
     tone(620,.09,'sine',.04); setTimeout(()=>tone(780,.1,'sine',.04),90); setTimeout(()=>tone(980,.13,'sine',.04),180); vibrate([25,40,25]);
     els.resultIcon.textContent='✅'; els.resultTitle.textContent='Ligne optimisée !'; els.resultText.textContent='Toutes les pièces ont été traitées sans bloquer l’usine.';
     els.resultTurns.textContent=state.turns; els.resultBuffers.textContent=state.bufferUses;
+    els.rewardLine.textContent=`+${reward} ⚙ Engrenage${reward>1?'s':''}${reward===3?' · première réussite':''}`; els.rewardLine.classList.remove('hidden');
     els.modalPrimary.textContent=state.levelIndex<LEVELS.length-1?'Niveau suivant':'Rejouer le challenge'; els.modalSecondary.textContent='Rejouer ce niveau';
     els.resultModal.classList.remove('hidden');
   }
@@ -191,7 +255,7 @@
     if(state.failed||state.won) return;
     state.failed=true; analytics.fails[state.levelIndex+1]=(analytics.fails[state.levelIndex+1]||0)+1; recordRun('fail'); saveAnalytics(); event('level_fail',{reason:title,turns:state.turns,durationSec:elapsedSeconds()});
     tone(110,.18,'sawtooth',.035); vibrate([60,50,80]);
-    els.resultIcon.textContent='🚨'; els.resultTitle.textContent=title; els.resultText.textContent=text;
+    els.resultIcon.textContent='🚨'; els.resultTitle.textContent=title; els.resultText.textContent=text; els.rewardLine.classList.add('hidden');
     els.resultTurns.textContent=state.turns; els.resultBuffers.textContent=state.bufferUses; els.modalPrimary.textContent='Réessayer'; els.modalSecondary.textContent='Voir l’indice';
     els.resultModal.classList.remove('hidden');
   }
@@ -237,6 +301,7 @@
     const tut = step===1?'Touchez la machine de la même couleur que la première pièce.' : step===2?'Une machine occupée a besoin de tours pour se libérer. Le buffer permet de changer l’ordre.' : step===3?'Touchez une pièce dans le buffer pour la traiter avant la pièce d’entrée.' : 'Anticipez les machines lentes : le buffer sert de sécurité, pas de stockage permanent.';
     els.tutorialStep.textContent=step; els.tutorialText.textContent=tut;
     els.prevBtn.disabled=state.levelIndex===0; els.nextBtn.disabled=!state.won;
+    renderMeta();
   }
 
   els.prevBtn.addEventListener('click',()=>{ if(state.levelIndex>0)initLevel(state.levelIndex-1,'previous'); });
@@ -244,6 +309,7 @@
   els.resetBtn.addEventListener('click',()=>initLevel(state.levelIndex,'reset'));
   els.hintBtn.addEventListener('click',()=>{state.hints++; analytics.hints=(analytics.hints||0)+1; saveAnalytics(); setMessage('Indice',LEVELS[state.levelIndex].hint,''); event('hint_open',{count:state.hints});});
   els.soundBtn.addEventListener('click',()=>{soundOn=!soundOn;els.soundBtn.textContent=soundOn?'🔊':'🔇';event('sound_toggle',{on:soundOn});});
+  els.upgradeBtn.addEventListener('click',upgradeFactory);
   els.modalPrimary.addEventListener('click',()=>{
     els.resultModal.classList.add('hidden');
     if(state.won){ initLevel(state.levelIndex<LEVELS.length-1?state.levelIndex+1:state.levelIndex,'modal_next'); }
@@ -285,6 +351,7 @@
     refresh();
   }
 
+  renderMeta();
   initLevel(0);
   initQaMode();
 })();
