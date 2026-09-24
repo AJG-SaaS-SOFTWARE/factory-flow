@@ -17,3 +17,10 @@ Ajouter `?qa=1` à l'URL du jeu. Un panneau permet de sauter directement aux niv
 3. À quel moment as-tu dû réfléchir pour la première fois ?
 4. Une défaite t'a-t-elle semblé logique ou arbitraire ?
 5. Aurais-tu envie de jouer à 20 niveaux supplémentaires ? Pourquoi ?
+
+
+## Métriques enregistrées localement
+
+Chaque tentative conserve, par niveau : résultat (win/fail), durée en secondes, nombre de tours, usages du buffer, erreurs de machine et indices ouverts. Les 20 dernières tentatives par niveau sont conservées dans le navigateur.
+
+En mode QA (`?qa=1`), utiliser **Copier JSON** pour récupérer ces données après une session de test.
