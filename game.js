@@ -11,7 +11,7 @@
   const LEVELS = window.FACTORY_FLOW_LEVELS;
 
   const els = Object.fromEntries([
-    'levelLabel','progressLabel','turnLabel','objectiveText','queueCount','queue','machines','bufferCount','bufferSlots','bufferBtn','messageBox','messageTitle','messageText','tutorialCard','tutorialStep','tutorialText','prevBtn','nextBtn','resultModal','resultIcon','resultTitle','resultText','resultTurns','resultBuffers','modalPrimary','modalSecondary','resetBtn','hintBtn','soundBtn','objectiveCard','bufferPanel','metaCard','metaIcon','metaStage','gearCount','metaProgress','metaNext','upgradeBtn','rewardLine'
+    'levelLabel','progressLabel','turnLabel','objectiveText','queueCount','queue','machines','bufferCount','bufferSlots','bufferBtn','messageBox','messageTitle','messageText','tutorialCard','tutorialStep','tutorialText','prevBtn','nextBtn','resultModal','resultIcon','resultTitle','resultText','resultTurns','resultBuffers','modalPrimary','modalSecondary','resetBtn','hintBtn','soundBtn','objectiveCard','bufferPanel','metaCard','metaIcon','metaStage','gearCount','metaProgress','metaNext','upgradeBtn','rewardLine','factoryScene','sceneCaption'
   ].map(id => [id, document.getElementById(id)]));
 
   let state = null;
@@ -48,6 +48,8 @@
     els.metaStage.textContent=stage.name;
     els.gearCount.textContent=`${meta.gears} ⚙`;
     els.metaNext.textContent=stage.next;
+    els.factoryScene.dataset.stage=String(meta.stage);
+    els.sceneCaption.textContent=stage.name;
     if(stage.cost===null){
       els.metaProgress.style.width='100%';
       els.upgradeBtn.textContent='Usine au maximum';
